@@ -48,6 +48,7 @@ library(airportr)
 #
 ace_data <- as.data.frame(readxl::read_excel("ACE_Yearly_Operational_Data.xlsx", sheet = "Operational Data", range = "C5:L44")) |>
   dplyr::select(1,8,9,10) #selecting only relevant data - ANSP name, flight percentages (overflights, domestic, international)
+
 #  
 # Creating header names and adding them into the data frame
 header <- c("ANSP", "overflight_per","domestic_per","international_arr_dep_per") 
@@ -78,7 +79,7 @@ fig1
 #Creating a plotly "stacked" bar chart, adding three bar types, a title in the end
 #
 fig2 <- ace_data |> plotly::plot_ly() |> 
-    plotly::add_trace(x = ~ANSP, 
+  plotly::add_trace(x = ~ANSP, 
             y = ~domestic_per,
             type = "bar",
             name = "Domestic flights %") |>
@@ -396,9 +397,9 @@ DT::datatable(lssip1,
 ## More information {#sec-more-information}
 
 -   To find out more about R language, R Markdown, htmlwidgets packaages, I include some links on the last slide
--   For easier reading, clicking [here]() or changing the url to \*\* you can view a webpage version of this presentation (no slides)
-                 and by clicking [here]() or changing the url to \*\* you can view the version with the R code chunks included
--   The whole source code is for this presentation is available at my [Github page](git)
+-   For easier reading, clicking [here](not_slides.html) you can view a webpage version of this presentation (no slides)
+                 and by clicking [here](not_slides_code.html) you can view the version with the R _code chunks_ included
+-   The whole source code and underlying data files for this presentation are available at the [Github repository of the same name](https://github.com/zdeblabla/projects-R)
 
 P.S. If you are intrigued and would like me to try to create a presentation for you, send me your data (CSV, XLS, JSON) to "[zdeno\@zdebla.me](mailto:zdeno@zdebla.me){.email}"
 
