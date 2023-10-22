@@ -1,5 +1,5 @@
 ---
-title: "A case for interactivity in slides presentations (using R Markdown and htmlwidgets)"
+title: "A case for interactivity in slides presentations (using R Markdown)"
 author: Zdenko Blasko
 output: 
   ioslides_presentation:
@@ -402,7 +402,7 @@ DT::datatable(lssip1,
                  and by clicking [here](not_slides_code.html) you can view the version with the R _code chunks_ included
 -   The whole source code and underlying data files for this presentation are available at the [Github repository of the same name](https://github.com/zdeblabla/projects-R)
 
-P.S. If you are intrigued and would like me to try to create a presentation for you, send me your data (CSV, XLS, JSON) to "[zdeno\@zdebla.me](mailto:zdeno@zdebla.me){.email}"
+P.S. If you are intrigued and would like me to try to create a presentation for you, write me an email to "[zdeno\@zdebla.me](mailto:zdeno@zdebla.me){.email}"
 
 ## Thank you
 
