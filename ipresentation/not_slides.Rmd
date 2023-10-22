@@ -25,11 +25,11 @@ library(airportr)
 
 ## Introduction {#sec-introduction}
 
--   In a digital age where dashboards and real-time data exploration have become the norm, it's remarkable that most of presentations still rely on the PowerPoint format, featuring static charts and visualizations
--   While these traditional slides have served us well for years, it's time to embrace presentations that not only inform but actively engage audiences
--   Interactive presentations shine when the information you want to convey benefits from exploration, engagement, or dynamic data interaction
+-   In a digital age where dashboards and real-time data exploration have become the norm, it is remarkable that most of public presentations still rely on the PowerPoint format, featuring static charts and visualizations
+-   While these 'traditional' slides have served us well for years, it's time to embrace presentations that not only inform but actively engage audiences
+-   Interactive presentations stand out when the information you want to convey benefits from exploration and engagement
 -   This means you can ask questions, analyze trends, and make decisions on the fly
--   That is especially useful in situation where one expects active engagement of with the audience, like Q&A sessions
+-   That is especially useful in situations where one expects active engagement of with the audience, like Q&A sessions
 
 ## On-Demand Information: {#sec-on-demand-information}
 
@@ -67,7 +67,7 @@ fig1
 
 ## Clean and Uncluttered Design {#sec-clean-and-uncluttered-design}
 
-- Overlapping labels and excessive text can overwhelm viewers. 
+- Overlapping labels and excessive text can overwhelm viewers 
 - Hover-based information display lets users focus on the data they are interested in without distraction.
 
 ```{r i_stack}
@@ -97,10 +97,11 @@ fig2
 
 ```
 
-## Reduced Cognitive Load {#sec-reduced-cognitive-load}
+## Customized Insights {#sec-reduced-cognitive-load}
 
-- The reduction in cognitive load can lead to better comprehension and decision-making. 
-- Dragging the cursor across allows to zoom in on a group of choice.
+- With interactive elements, the user can tailor the presentation to your audience's needs
+- The reduction in cognitive load can lead to better comprehension and decision-making 
+- _Try clicking and dragging the cursor across to zoom in on a group of choice_
 
 ```{r i_scat}
 # First the 2-column table with Functional Airspace Blocks (FABs) 
@@ -164,7 +165,7 @@ fig4
 ## Time-Series Data: {#sec-time-series-data}
 
 - For data that changes over time, interactive presentations can allow users to explore trends, anomalies, and correlations. 
-- Zoom in on specific data points, highlight critical trends, and provide deeper insights when necessary.
+- _Try changing the displayed time period_
 
 ```{r i_dy}
 
@@ -229,7 +230,7 @@ dygraphs::dygraph(flts,
 ## Comparative Analysis {#sec-comparative-analysis}
 
 - When you want to compare different scenarios, products, or regions, interactive presentations allow users to switch between options quickly 
-- Click on the legend on the bottom of the chart to add or remove elements)
+- _Try clicking on the legend on the bottom of the chart to add and remove displayed elements_
 
 ```{r i_hc}
 ################
@@ -281,12 +282,12 @@ highcharter::highchart(type = "stock") |>
 ## Output {#sec-output}
 
 -   The output file used for these interactive slides is a single *.html* document
--   The *.html* file can be sent by email or carried on a flash drive. All the data and visuals are already locally in the code, without need to be online to present it
--   HTML presentations work seamlessly across different platforms and devices, whether it's a computer, tablet, or smartphone.
+-   The *.html* file can be sent by email, downloaded from a repository (or carried on a flash drive). All the data and visuals are already locally in the code, without need to be online to present it
+-   HTML presentations work seamlessly across different platforms and devices, whether it's a computer, tablet, or smartphone
 
 ### Types of content
 
--   Beyond various types of charts and graphs, interactive capabilities extend to **maps**, **data tables**, calendars, network graphs.
+-   Beyond various types of charts and graphs, interactive capabilities include to **maps**, **data tables ** _(see the next slides)_, calendars, network graphs
 
 ## Interactive map {#sec-interactive-map}
 
@@ -354,8 +355,8 @@ p
 
 ## Interactive table {#sec-interactive-table}
 
-- An interactive table enables the user to sort and filter data directly within the table, by a keyword, either in the whole table or on the level of columns. 
-- Try typing "ITY" into the "Obj. Number" column, or "Ongoing" into the "Overall Progress" column.
+- An interactive table enables the user to *sort* and *filter* data directly within the table, by a keyword, either in the whole table or on the level of columns. 
+- _Try typing "ITY" into the "Obj. Number" column, or "Ongoing" into the "Overall Progress" column_
 
 ```{r i_table}
 
@@ -386,17 +387,17 @@ DT::datatable(lssip1,
 
 ## Technology used {#sec-technology-used}
 
--   This interactive elements of this presentation are written in **R** language, a versatile programming language used for analyzing data, creating charts and graphs, and making data-driven decisions
--   To be more precise, the interactive elements are brought to live using series of R packages called htmlwidgets\*, powerful technology in R that bridges the gap between R and JavaScript
+-   This interactive elements of this presentation are written in **R** language, a versatile programming language used for analyzing data, creating charts and graphs, making data-driven decisions (and much more ..)
+-   To be more precise, the interactive elements are brought to live using series of R packages called htmlwidgets, powerful technology in R that bridges the gap between R and JavaScript
 -   The presentation is written in [R Markdown](https://garrettgman.github.io/rmarkdown/index.html) interface, a user-friendly notebook format that combines plain text with code, allowing non-programmers and data professionals alike to create dynamic reports
--   R Markdown documents can be built into many different formats: PDF, Word (both static), html notebooks, whole books or websites 
+-   R Markdown documents can be built into many different formats: PDF, Word (both static), notebooks, whole books or websites 
 
 ## More information {#sec-more-information}
 
 -   To find out more about R language, R Markdown, htmlwidgets packaages, I include some links on the last slide
--   For easier reading, clicking [here]() or changing the url to \*\* you can view a webpage version of this presentation (no slides)
-                 and by clicking [here]() or changing the url to \*\* you can view the version with the R code chunks included
--   The whole source code is for this presentation is available at my [Github page](git)
+-   For easier reading, clicking [here](not_slides.html) you can view a webpage version of this presentation (no slides)
+                 and by clicking [here](not_slides_code.html) you can view the version with the R _code chunks_ included
+-   The whole source code and underlying data files for this presentation are available at the [Github repository of the same name](https://github.com/zdeblabla/projects-R)
 
 P.S. If you are intrigued and would like me to try to create a presentation for you, send me your data (CSV, XLS, JSON) to "[zdeno\@zdebla.me](mailto:zdeno@zdebla.me){.email}"
 
