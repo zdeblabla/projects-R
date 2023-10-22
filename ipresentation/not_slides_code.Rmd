@@ -1,0 +1,414 @@
+---
+title: "A case for interactivity in slides presentations (using R Markdown and htmlwidgets)"
+author: Zdenko Blasko
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning=FALSE, 
+                      message=FALSE)
+
+library(dygraphs)                     
+library(tidyverse)
+library(readxl)
+library(eurostat)
+library(plotly)
+library(viridis)
+library(DT)
+library(highcharter)
+library(priceR)
+library(airportr)
+
+
+```
+
+## Introduction {#sec-introduction}
+
+-   In a digital age where dashboards and real-time data exploration have become the norm, it's remarkable that most of presentations still rely on the PowerPoint format, featuring static charts and visualizations
+-   While these traditional slides have served us well for years, it's time to embrace presentations that not only inform but actively engage audiences
+-   Interactive presentations shine when the information you want to convey benefits from exploration, engagement, or dynamic data interaction
+-   This means you can ask questions, analyze trends, and make decisions on the fly
+-   That is especially useful in situation where one expects active engagement of with the audience, like Q&A sessions
+
+## On-Demand Information: {#sec-on-demand-information}
+
+- With hover interactions, the users can access additional information precisely when they need it, <br> like in this case of summary statistics (boxplot displaying quartiles):
+
+```{r i_box}
+
+# The Excel dataset serving as the data basis for this figure comes from the EUROCONTROL ANSP performance website 
+# https://www.eurocontrol.int/performance/data/download/xls/ACE_Yearly_Operational_Data.xlsx
+# "Yearly ACE operational data"
+# Unfortunately this data only come in the XLS format
+# First we import and slice data from an Excel table.
+#
+ace_data <- as.data.frame(readxl::read_excel("ACE_Yearly_Operational_Data.xlsx", sheet = "Operational Data", range = "C5:L44")) |>
+  dplyr::select(1,8,9,10) #selecting only relevant data - ANSP name, flight percentages (overflights, domestic, international)
+
+#  
+# Creating header names and adding them into the data frame
+header <- c("ANSP", "overflight_per","domestic_per","international_arr_dep_per") 
+colnames(ace_data) = header
+#
+#Creating boxplot in Plotly, adding three plots for 3 columns
+# 
+fig1 <- plotly::plot_ly(type = "box") |> 
+  plotly::add_trace(y = ~ace_data$overflight_per, name = "Overflight %") |> 
+  plotly::add_trace(y = ~ace_data$domestic_per, name = "Domestic flights %") |>
+  plotly::add_trace(y = ~ace_data$international_arr_dep_per, name = "Arr/Dep international flights %") |>
+  # Adding axis labels, positioning the legend into the center of the chart, adding a title, changing the y label
+  plotly::layout(yaxis = list(title = "Distribution of percentages"),
+                 legend = list(x = 0.35, y = 0.85),
+                 title = "Distribution of percentages of 3 types of flights (Overflights, Domestic <br> and ARR/DEP international flights) inbetween the EUROCONTROL ANSPs") 
+
+fig1
+```
+
+## Clean and Uncluttered Design {#sec-clean-and-uncluttered-design}
+
+- Overlapping labels and excessive text can overwhelm viewers. 
+- Hover-based information display lets users focus on the data they are interested in without distraction.
+
+```{r i_stack}
+#This figure is using the "ace_data" frame created in the previous code chuck/slide
+#
+#Creating a plotly "stacked" bar chart, adding three bar types, a title in the end
+#
+fig2 <- ace_data |> plotly::plot_ly() |> 
+  plotly::add_trace(x = ~ANSP, 
+            y = ~domestic_per,
+            type = "bar",
+            name = "Domestic flights %") |>
+  plotly::add_trace(x = ~ANSP,
+            y = ~overflight_per,
+            type = "bar",
+            name = "Overflight %") |>
+  plotly::add_trace(x = ~ANSP,
+            y = ~international_arr_dep_per,
+            type = "bar",
+            name = "Arr/Dep international flights %") |>  
+  plotly::layout(barmode ="stack", 
+         barnorm = "percent",
+         yaxis = list(title = "Ratio of flight types"),
+         title = "Share of types of flights inbetween the EUROCONTROL ANSPs in 2022")
+
+fig2
+
+```
+
+## Reduced Cognitive Load {#sec-reduced-cognitive-load}
+
+- The reduction in cognitive load can lead to better comprehension and decision-making. 
+- Dragging the cursor across allows to zoom in on a group of choice.
+
+```{r i_scat}
+# First the 2-column table with Functional Airspace Blocks (FABs) 
+# and their respective countries was created from the table at Skybrary article https://skybrary.aero/articles/functional-airspace-block-fab
+fabs <- read.csv("fabs.csv", sep = ";", col.names = c("Name", "FAB"))
+#
+# The financial data was exported as a CSV from EUROCONTROL PRU dashboard, section "Cost efficiency KPI #1: Determined unit cost (DUC) for en-route (ER) ANS",
+# available at https://www.eurocontrol.int/prudata/dashboard/vis/2022/
+# Importing the header and data from the CSV,assinging the header afterwards
+#  
+header <- read.csv("RP3 - ERT_CEF_2022 - ERT_CEF.csv", header=F, skip = 1, nrows = 1)
+ert <- read.csv("RP3 - ERT_CEF_2022 - ERT_CEF.csv", header=F, skip = 2)
+colnames(ert) = header
+#
+# Filtering the relevant columns and coercing the numeric data 
+ert <- dplyr::select(ert, c(2:4),6)
+ert$`Total costs` <- as.numeric(gsub(",","",ert$`Total costs`))
+ert$`Service Units` <- as.numeric(gsub(",","",ert$`Service Units`))
+#
+# Creating separate dataset for countries with EUR currency
+eur_only <- dplyr::filter(ert, Currency == "EUR")
+#
+# Creating separate dataset for countries with other currencies than EUR, removing the thousands separator "," from the numeric data 
+other_curr <- filter(ert, Currency != "EUR")
+other_curr$`Total costs` <- as.numeric(gsub(",","",other_curr$`Total costs`))
+#
+#Using the PriceR package to get the currency exchange rates
+# To use thic package, one has to create a profile for an API key at:
+# https://exchangerate.host
+#
+rates <- priceR::exchange_rate_latest("EUR")
+#
+#Joining the two datasets (other currencies data and exchange rates), calculating the EUR equivalents, changing column names
+#
+other_curr <- dplyr::left_join(other_curr, rates, by = join_by(Currency == currency)) 
+other_curr <- dplyr::mutate(other_curr, Cost_in_EUR = (`Total costs`)/(one_EUR_is_equivalent_to) ) |> 
+  select(c(1,2,4,6)) 
+other_curr <- dplyr::rename(other_curr ,"Total costs" = Cost_in_EUR) |>
+  relocate("Total costs", .after = `Service Units`)
+#
+# Binding the EUR and converted non-EUR datasets together, joining them with the FAB data, 
+# creating the final dataset used for the visualisation
+#
+combined <- rbind(eur_only,other_curr)
+combined2 <- dplyr::left_join(combined,fabs, by = join_by(Name))
+#
+# Creating the Plotly package scatter plot, adding a title
+fig4 <- plotly::plot_ly(data = combined2,
+                        type = "scatter",
+                        mode = "markers",
+                x = ~`Total costs`, 
+                y = ~`Service Units`, 
+                color = ~FAB, 
+                text = ~paste("Country ", Name, '<br>Total Costs:', `Total costs`, '<br>Service Units:', `Service Units`)) |>
+  plotly::layout(title = "ANSP Cost-efficiency (2022)")
+
+fig4
+
+```
+
+## Time-Series Data: {#sec-time-series-data}
+
+- For data that changes over time, interactive presentations can allow users to explore trends, anomalies, and correlations. 
+- Zoom in on specific data points, highlight critical trends, and provide deeper insights when necessary.
+
+```{r i_dy}
+
+# The Excel dataset serving as the data basis for this figure comes from the EUROCONTROL ANSP performance website 
+# https://www.eurocontrol.int/performance/data/download/xls/En-Route_ATFM_Delay_AUA.xlsx
+# "En-route IFR flights and ATFM delays (AUA) no post ops adjustments"
+# This data is available also in CSV, but every year is a separate file, so I chose XLS format
+# Since this file 20MB big, I first filtered the relevant data and saved them into a CSV
+# Resulting CSV is 123kB
+#
+# First we import and slice data from an Excel table. 
+#
+# flts_xls <- as.data.frame(readxl::read_excel("En-Route_ATFM_Delay_AUA.xlsx", sheet = "DATA", range =   
+# cell_cols(c(1,2,5,7)))) |>
+#  dplyr::filter(ENTITY_NAME == "EUROCONTROL Area (MS)") |>
+#  dplyr::select(1,2,4,7)
+# write.csv(flts_xls, "dy_flts.csv", row.names=FALSE)
+#
+# Importing data from the CSV created above beforehand
+flts <- read.csv("dy_flts.csv")
+
+# Converting the dates to Date objects
+flts$FLT_DATE <- as.Date(flts$FLT_DATE)
+#
+# Defining the start and end dates of the range that will be used for ilustration purposes
+start_date <- as.Date("2020-01-01")
+end_date <- as.Date("2022-12-31")
+
+# Finding the historical date in the time with the lowest number of flights 
+min_flts <- min(flts$FLT_ERT_1)
+df_min_flts<- dplyr::filter(flts, FLT_ERT_1 == min_flts) 
+date_min_flts <- df_min_flts$FLT_DATE
+#
+# Subseting the date in time within the specified time range used for ilustration purposes
+subsetted_dates <- dplyr::filter(flts, FLT_DATE >= start_date & FLT_DATE <= end_date)
+#
+# Finding the date in the selected time period (after COVID) with the highest numner of flights
+max_flts_post_covid <- max(subsetted_dates$FLT_ERT_1)
+df_max_flts_post_covid <- dplyr::filter(subsetted_dates, FLT_ERT_1 == max_flts_post_covid) 
+date_max_flts_post_covid <- df_max_flts_post_covid$FLT_DATE
+
+# Creating the visualisation using "dygraphs" package
+dygraphs::dygraph(flts, 
+        main = "Daily flights in the EUROCONTROL area (with focus on the COVID-19 period)", 
+        ylab = "Number of flights") |>
+  #Changing labels
+  dygraphs::dySeries("MONTH_NUM", label = "Month") |>
+  dygraphs::dySeries("FLT_ERT_1", label = "Number of flights") |>
+  #Adding highlight option for the chart
+  dygraphs::dyHighlight(highlightCircleSize = 5, ) |>
+  #Adding Range selector
+  dygraphs::dyRangeSelector(dateWindow = c("2019-06-01", "2023-06-01")) |>
+   #Adding annotations
+  dygraphs::dyAnnotation("2020-03-17", text ="*", tooltip = "Europe declared epicentre of COVID-19 pandemic") |>
+  dygraphs::dyAnnotation(date_max_flts_post_covid, text ="*", tooltip = "Highest number of flights post-2019") |>
+  dygraphs::dyAnnotation(date_min_flts, text ="*", tooltip = "Lowest number of flights in the period ") |>
+  #Adding shading
+  dygraphs::dyShading(from = date_min_flts, to = date_max_flts_post_covid) 
+
+```
+
+## Comparative Analysis {#sec-comparative-analysis}
+
+- When you want to compare different scenarios, products, or regions, interactive presentations allow users to switch between options quickly 
+- Click on the legend on the bottom of the chart to add or remove elements)
+
+```{r i_hc}
+################
+##The Excel dataset serving as the data basis for this figure comes from the EUROCONTROL ANSP performance website 
+# https://www.eurocontrol.int/performance/data/download/xls/Airport_Traffic.xlsx
+# "Airport traffic -  Daily IFR arrivals and departures by airport"
+# Unfortunately this data only come in the XLS format
+# Since this file is over 90MB big, I first filtered and grouped the relevant data and later saved them into # a CSV
+##First we import and slice data from an Excel table.
+# 
+#  apt_traffic <- as.data.frame(readxl::read_excel("Airport_Traffic.xlsx", sheet = "DATA", range = 
+#  cell_cols(c(4,5,6,8))))
+# 
+##Grouping data in order to find 5 busiest aiports
+# top_apts <-  apt_traffic |> 
+#  dplyr::group_by(APT_ICAO) |> 
+#  dplyr::summarise(flts_sum = sum(FLT_DEP_1)) |> 
+#  dplyr::arrange(-flts_sum) |> 
+#  slice(1:5)
+#
+##filtering out data just for these 5 airports
+# slct_apts_1 <- dplyr::filter(apt_traffic, APT_ICAO %in% top_apts$APT_ICAO)
+###Writing the grouped data into a CSV, resulting in 747kB size
+# write.csv(slct_apts_1, "hc_aslct_apts.csv", row.names=FALSE)
+###############
+#
+# Importing data from the CSV created above beforehand, 
+# coercing the 'FLT_DATE' column into a date class
+
+slct_apts <- read.csv("hc_aslct_apts.csv")
+slct_apts$FLT_DATE <- as.Date(slct_apts$FLT_DATE)
+#
+#Creating highcharter visualisation, "stock" line chart
+highcharter::highchart(type = "stock") |>
+  highcharter::hc_add_series(data = slct_apts, 
+                type = "line",
+                hcaes(x = FLT_DATE,
+                      y = FLT_DEP_1,
+                      group = APT_NAME)) |>
+  highcharter::hc_legend(enabled = TRUE) |>
+  # Adding Financial Times theme
+  highcharter::hc_add_theme(hc_theme_ft()) |>
+  # Adding title
+  highcharter::hc_title(text = "Themes can be added to the charts, 'Financial Times' in this case") |>
+  highcharter::hc_subtitle(text = "Daily flights of 5 busiest airport in the network (2016-2023)")
+
+```
+
+## Output {#sec-output}
+
+-   The output file used for these interactive slides is a single *.html* document
+-   The *.html* file can be sent by email or carried on a flash drive. All the data and visuals are already locally in the code, without need to be online to present it
+-   HTML presentations work seamlessly across different platforms and devices, whether it's a computer, tablet, or smartphone.
+
+### Types of content
+
+-   Beyond various types of charts and graphs, interactive capabilities extend to **maps**, **data tables**, calendars, network graphs.
+
+## Interactive map {#sec-interactive-map}
+
+One interactive visualisations can replace multiple static images.
+
+```{r i_map}
+############################
+# # The CSV dataset serving as the data basis for this figure comes from the EUROCONTROL ANSP performance website 
+# https://www.eurocontrol.int/performance/data/download/csv/apt_dly_2019.csv.bz2
+# "Airport arrival ATFM delays - (no post ops adjustments) - 2019"
+# Since this CSV file is over 90MB big, I first filtered and grouped the relevant data and later saved them # into a smaller-size CSV
+##First we import and slice data from an Excel table.
+# 
+# Importing data from the data source CSV, choosing only applicable columns, converting NA values to 0
+#
+#  apts_dly <- read.csv("apt_dly_2019.csv") |>  
+#  dplyr::select(5, c(8:9)) |>
+#  dplyr::mutate(FLT_ARR_1 = ifelse(is.na(FLT_ARR_1), 0, FLT_ARR_1), DLY_APT_ARR_1 = 
+# ifelse(is.na(DLY_APT_ARR_1), 0, DLY_APT_ARR_1))
+# grouping data by airport code in order to summarise and arrange them
+# ap1 <-  dplyr::group_by(apts_dly,APT_ICAO) |>
+#  dplyr::summarise(flights = sum(FLT_ARR_1), delays = sum(DLY_APT_ARR_1)) |>
+#  dplyr::mutate(dly_flt = delays/flights) |>
+#  dplyr::arrange(desc(dly_flt))
+##Writing the grouped data into a CSV, resulting in 8kB size
+#write.csv(ap1, "gg_apts_dly.csv", row.names=FALSE)
+#
+# Importing data from the CSV created above beforehand
+#############################
+ap2 <- read.csv("gg_apts_dly.csv")
+#
+# Importing airport location coordinates from the airportr library
+ap3 <- dplyr::select(airportr::airports, 2,5,10,11)
+#
+# Joining the summarized data with the coordinates to create geom_points with variables and coordinates
+ap4 <- dplyr::left_join(ap2,ap3, by = join_by("APT_ICAO" == "ICAO"))
+#
+# importing shapefile from the 'eurostat' library for the map background layer
+geodata <- eurostat::get_eurostat_geospatial(
+  output_class = "sf",
+  nuts_level = 0,
+  year = 2013)
+# Creating map visualisation in ggplot package, with shapefile background and geom_points for airports
+gr <- ggplot2::ggplot() +
+  ggplot2::geom_sf(data = geodata) +
+  ggplot2::geom_point( data=ap4, aes(x = Longitude, y = Latitude, label = Name, size=flights, color=dly_flt)) +
+  # changing color scheme, using the Viridis package
+  viridis::scale_color_viridis( alpha = 1,
+                       begin = 1,
+                       end = 0,
+                       direction = 1,
+                       discrete = FALSE,
+                       option = "A") +
+  ggplot2::labs(title = "Airport in the EUROCONTROL area, with their relative traffic size and ATFM delays(2019)",
+       caption = "Source of data: EUROCONTROL, source of Shapefile map: EUROSTAT",
+       color = "ATFM average delay (min/flight)") +
+  # setting the boundaries of the shapefile background, 
+  # otherwise it would show also EU territories outside geography of Europe
+  ggplot2::scale_x_continuous(limits = c(-10, 35)) +
+  ggplot2::scale_y_continuous(limits = c(35, 65)) 
+#Animating the ggplot visualisation with Plotly (ggplotly) package 
+p <- ggplotly(gr)
+p
+```
+
+## Interactive table {#sec-interactive-table}
+
+- An interactive table enables the user to sort and filter data directly within the table, by a keyword, either in the whole table or on the level of columns. 
+- Try typing "ITY" into the "Obj. Number" column, or "Ongoing" into the "Overall Progress" column.
+
+```{r i_table}
+
+### Samples datasets for 3 objectives were downloaded from https://www.atmmasterplan.eu/depl/essip_objectives/map
+# 4 random ATM Master Plan objectives were chosen. Well not completely random, name length of the objective played role 
+# Importing and slicing data from 4 Excel tables
+lssip2 <- as.data.frame(readxl::read_excel("eATMPortal_Maptool_COM10.2_Edition2022_2023-10-19.xls", sheet = "Raw data", skip = 10))
+lssip3 <- as.data.frame(readxl::read_excel("eATMPortal_Maptool_AOM19.5_Edition2022_2023-10-19.xls", sheet = "Raw data", skip = 10))
+lssip4 <- as.data.frame(readxl::read_excel("eATMPortal_Maptool_NAV03.2_Edition2022_2023-10-19.xls", sheet = "Raw data", skip = 10))
+lssip5 <- as.data.frame(readxl::read_excel("eATMPortal_Maptool_ITY-ACID_Edition2022_2023-10-19.xls", sheet = "Raw data", skip = 10))
+#
+# Binding these 4 frames into one, filtering out relevant columns
+lssip1 <- rbind(lssip2, lssip3, lssip4, lssip5) |>
+  dplyr::select(2,3,4,8,10,11)
+
+# creating interactive table, using the 'DT' package
+# adding the filter window on top of the each column
+# adding table style and "conditional formating"
+DT::datatable(lssip1, 
+              rownames = FALSE, #hiding names of the rows
+              filter = list(position = "top"), 
+              class = 'compact',
+              options = list(pageLength = 8)) |> 
+  DT::formatStyle('Overall Progress', backgroundColor = styleEqual(c("Ongoing", "Completed", "Not Applicable", "Not yet planned", "Planned"), c('lightgreen', 'darkgreen', 'lightgrey', 'orange','lightblue')))  #recreating the "conditional formatting" of the Status column
+
+
+```
+
+## Technology used {#sec-technology-used}
+
+-   This interactive elements of this presentation are written in **R** language, a versatile programming language used for analyzing data, creating charts and graphs, and making data-driven decisions
+-   To be more precise, the interactive elements are brought to live using series of R packages called htmlwidgets\*, powerful technology in R that bridges the gap between R and JavaScript
+-   The presentation is written in [R Markdown](https://garrettgman.github.io/rmarkdown/index.html) interface, a user-friendly notebook format that combines plain text with code, allowing non-programmers and data professionals alike to create dynamic reports
+-   R Markdown documents can be built into many different formats: PDF, Word (both static), html notebooks, whole books or websites 
+
+## More information {#sec-more-information}
+
+-   To find out more about R language, R Markdown, htmlwidgets packaages, I include some links on the last slide
+-   For easier reading, clicking [here]() or changing the url to \*\* you can view a webpage version of this presentation (no slides)
+                 and by clicking [here]() or changing the url to \*\* you can view the version with the R code chunks included
+-   The whole source code is for this presentation is available at my [Github page](git)
+
+P.S. If you are intrigued and would like me to try to create a presentation for you, send me your data (CSV, XLS, JSON) to "[zdeno\@zdebla.me](mailto:zdeno@zdebla.me){.email}"
+
+## Thank you
+
+#### Links
+- [R markdown presentations](https://garrettgman.github.io/rmarkdown/lesson-11.html) 
+- [Ioslides presentations](https://bookdown.org/yihui/rmarkdown/ioslides-presentation.html)
+- [Plotly for R package](https://plotly.com/r/)
+- [HTMLwidgets webpage](https://www.htmlwidgets.org/)
+- [One good course on Linkedin learning](https://www.linkedin.com/learning/r-interactive-visualizations-with-htmlwidgets)
+- [Another good course on Linkedin learning](https://www.linkedin.com/learning/creating-reports-and-presentations-with-r-markdown-and-rstudio)
+
+
+
