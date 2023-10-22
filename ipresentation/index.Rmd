@@ -400,7 +400,7 @@ DT::datatable(lssip1,
 -   To find out more about R language, R Markdown, htmlwidgets packaages, I include some links on the last slide
 -   For easier reading, clicking [here](not_slides.html) you can view a webpage version of this presentation (no slides)
                  and by clicking [here](not_slides_code.html) you can view the version with the R _code chunks_ included
--   The whole source code and underlying data files for this presentation are available at the [Github repository of the same name](https://github.com/zdeblabla/projects-R)
+-   The whole source code and underlying data files for this presentation are available at [my Github](https://github.com/zdeblabla/projects-R/blob/main/ipresentation/index.Rmd)
 
 P.S. If you are intrigued and would like me to try to create a presentation for you, write me an email to "[zdeno\@zdebla.me](mailto:zdeno@zdebla.me){.email}"
 
